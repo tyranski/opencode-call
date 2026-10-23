@@ -1,0 +1,23 @@
+{
+  "name": "opencode-call",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "remoteUser": "node",
+  // Share the host network so OAuth callbacks to localhost:<port> reach opencode.
+  // Linux Docker Engine only; on Docker Desktop (macOS/Windows) remove this and use forwardPorts.
+  "runArgs": ["--network=host"],
+  "mounts": [
+    "source=opencode-call-config-${devcontainerId},target=/home/node/.config/opencode,type=volume",
+    "source=opencode-call-data-${devcontainerId},target=/home/node/.local/share/opencode,type=volume"
+  ],
+  "postCreateCommand": "sudo chown -R node:node /home/node/.config/opencode /home/node/.local/share/opencode && opencode --version",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}

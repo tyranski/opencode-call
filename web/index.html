@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenCode Call — voice test</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main>
+    <h1>OpenCode Call</h1>
+    <p>Desktop voice test · ElevenLabs Agents + your OpenCode server</p>
+    <p>Starting voice connects your microphone to ElevenLabs. Use headphones. This prototype stays active in this browser tab.</p>
+    <section aria-label="Connection">
+      <label for="session">OpenCode session</label>
+      <select id="session"><option value="">Load sessions first</option></select>
+      <button id="refresh">Load sessions</button>
+      <div class="controls">
+        <button id="start">Start voice</button>
+        <button id="end" disabled>End voice</button>
+        <button id="mute" disabled>Mute microphone</button>
+        <button id="progress" disabled>Ask for progress</button>
+      </div>
+      <p id="status" role="status">Disconnected</p>
+      <p id="error" role="alert"></p>
+    </section>
+    <section>
+      <h2>Agreed task</h2>
+      <pre id="proposal">No proposal yet. Discuss a task before authorizing it.</pre>
+      <p>Say “start building” or “gå i gang med at bygge” after the agent reads back the proposal. “Okay” never starts a build.</p>
+    </section>
+    <section>
+      <h2>Conversation</h2>
+      <ol id="transcript" aria-live="polite"></ol>
+      <form id="message-form">
+        <label for="message">Typed reply</label>
+        <input id="message" autocomplete="off" maxlength="10000" disabled>
+        <button id="send" disabled>Send</button>
+      </form>
+    </section>
+    <details><summary>Current OpenCode status</summary><pre id="activity">No status yet.</pre></details>
+  </main>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "opencode-call",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "opencode:inspect": "node src/cli.js inspect",
+    "opencode:sessions": "node src/cli.js sessions",
+    "opencode:progress": "node src/cli.js progress",
+    "opencode:watch": "node src/cli.js watch",
+    "voice:build": "esbuild web/app.js --bundle --format=esm --outfile=.voice-build/app.js",
+    "voice:dev": "npm run voice:build && node --env-file-if-exists=.env src/voice-server.js",
+    "voice:config": "node src/agent-config.js"
+  },
+  "dependencies": {
+    "@elevenlabs/client": "1.30.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "overrides": {
+    "livekit-client": "2.22.0"
+  }
+}
