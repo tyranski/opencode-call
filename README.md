@@ -74,6 +74,37 @@ If port 4096 is already occupied by your intended OpenCode server, use it rather
 than starting another instance. An ordinary `opencode` TUI may use a different
 server address; attaching to the explicit server above keeps the setup consistent.
 
+### OpenCode reports `ServeError`
+
+An occupied server port can cause the generic `Error: Unexpected error` /
+`ServeError` message. The warning about `OPENCODE_SERVER_PASSWORD` being unset is
+separate: it means authentication is not enabled.
+
+If the existing service on 4096 is not usable, start OpenCode on another available
+port in Terminal 1:
+
+```sh
+opencode serve --hostname 127.0.0.1 --port 4097
+```
+
+Update the voice app's `.env` to match:
+
+```dotenv
+OPENCODE_URL=http://127.0.0.1:4097
+```
+
+Then, in Terminal 2, verify the server and restart the voice app:
+
+```sh
+node --env-file=.env src/cli.js inspect
+npm run voice:dev
+```
+
+Use `opencode attach http://127.0.0.1:4097 --dir /workspaces/opencode-call`
+if you also want the OpenCode terminal interface. The voice app's `VOICE_PORT`
+is independent and does not need to change. If startup still fails on an available
+port, run the same `opencode serve` command with `--print-logs` for diagnostics.
+
 ## OpenCode integration
 
 Point at your running OpenCode server. `OPENCODE_DIRECTORY` is the absolute path
@@ -116,9 +147,8 @@ the task controller, read-only investigation, limitations, and deployment notes.
 4. Open the **full local URL printed in the terminal**, including its `#` fragment.
    In a dev container, forward port **3210** to the same local port and use that URL
    in your host browser.
-   If the voice port is already in use, stop the earlier voice process or run
-   `VOICE_PORT=3220 npm run voice:dev` and forward port **3220** instead. Use the
-   newly printed URL after every server restart.
+   If the voice port is already in use, follow
+   [Run the app on another port](#run-the-app-on-another-port).
 5. Load/select an OpenCode session and click **Start voice**. This connects your
    microphone to ElevenLabs and uses your ElevenLabs account.
 6. Discuss a small task. After the agent reads back its proposal, say **“start
@@ -129,6 +159,34 @@ the task controller, read-only investigation, limitations, and deployment notes.
 The bridge keeps long-lived credentials on the server. This is a desktop test
 harness; iOS background operation, wake detection, Spotify control, and automatic
 voice reconnection are still pending. See [voice setup and limits](docs/voice-setup.md).
+
+### Run the app on another port
+
+If startup reports `EADDRINUSE: address already in use 127.0.0.1:3210`, choose
+another available port, for example **3220**:
+
+```sh
+VOICE_PORT=3220 npm run voice:dev
+```
+
+This overrides the port for that run. To make it the default, set this in `.env`:
+
+```dotenv
+VOICE_PORT=3220
+```
+
+Then start normally with `npm run voice:dev`.
+
+- In VS Code's **Ports** panel, forward **3220** instead of **3210**.
+- Open the **new full URL printed in the terminal**, including its `#` access-key
+  fragment. The access key changes each time the voice server starts.
+- If you use `VOICE_PUBLIC_ORIGIN` or Tailscale Serve, update the forwarded address
+  or proxy mapping to reach the new app port.
+- OpenCode remains on **4096**; changing the voice app port does not require changing
+  `OPENCODE_URL`.
+
+If 3220 is also occupied, substitute another available port in the command and
+forward that port instead.
 
 ## Tests
 
