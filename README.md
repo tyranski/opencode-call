@@ -13,7 +13,68 @@ to prove. The implementation includes a Node.js 22 OpenCode integration library,
 diagnostic CLI, and a browser-based ElevenLabs Agents voice test client. The native
 SwiftUI app and physical-device audio validation come next.
 
-## Try it later — OpenCode integration
+## Start the OpenCode server first
+
+The voice app connects to an existing OpenCode server; `npm run voice:dev` does
+not start that server for you.
+
+### Terminal 1 — OpenCode server
+
+Open a terminal in the project you want OpenCode to work on and run:
+
+```sh
+opencode serve --hostname 127.0.0.1 --port 4096
+```
+
+Leave this terminal running. For the simplest development-container setup, run
+both OpenCode and the voice app inside the same container. `127.0.0.1` inside a
+container does not generally refer to the Ubuntu host.
+
+### Terminal 2 — connect the voice app
+
+Open another terminal at this repository's root. Copy `.env.example` to `.env`
+if you have not already created it, then configure:
+
+```dotenv
+OPENCODE_URL=http://127.0.0.1:4096
+OPENCODE_DIRECTORY=/workspaces/opencode-call
+```
+
+The directory above is this repository's path inside the development container.
+Replace it with the absolute project path **on the OpenCode server** if you want
+to work on a different project. Keep your ElevenLabs API key and agent ID in this
+same `.env` file as described below.
+
+Check that the server is reachable before starting the voice app:
+
+```sh
+node --env-file=.env src/cli.js inspect
+node --env-file=.env src/cli.js sessions
+```
+
+If no sessions appear, use another terminal to attach to the server:
+
+```sh
+opencode attach http://127.0.0.1:4096 --dir /workspaces/opencode-call
+```
+
+Use `/connect` if your coding-model provider is not configured, then start a
+conversation in the intended project so a session is available to select.
+Replace the `--dir` path when using a different project.
+
+**Optional server authentication:** `OPENCODE_SERVER_USERNAME` defaults to
+`opencode`. To protect the server with a password, set `OPENCODE_SERVER_PASSWORD`
+in Terminal 1's environment **before** running `opencode serve`, and put the same
+password in the voice app's `.env`. These are OpenCode server credentials, not
+your Ubuntu login. Adding them only to `.env` does not configure an already-running
+server. Leave them unset for the initial loopback-only test if authentication is
+not enabled on your server.
+
+If port 4096 is already occupied by your intended OpenCode server, use it rather
+than starting another instance. An ordinary `opencode` TUI may use a different
+server address; attaching to the explicit server above keeps the setup consistent.
+
+## OpenCode integration
 
 Point at your running OpenCode server. `OPENCODE_DIRECTORY` is the absolute path
 of the project **on that server**, not necessarily the path on this client.
@@ -37,13 +98,15 @@ state after disconnects; Ctrl+C stops it. For remote use, set the URL to your
 private Tailscale endpoint. See [integration details](docs/integration.md) for
 the task controller, read-only investigation, limitations, and deployment notes.
 
-## Try it later — voice conversation
+## Voice conversation
 
 1. Follow [ElevenLabs setup](docs/voice-setup.md) to configure a dedicated agent,
    including the supplied prompt and client tools.
 2. Copy `.env.example` to `.env` and fill in your OpenCode connection,
    `ELEVENLABS_API_KEY`, and `ELEVENLABS_AGENT_ID`.
-3. Run:
+3. Start OpenCode and verify the connection using
+   [Start the OpenCode server first](#start-the-opencode-server-first). Keep that
+   server running. In a separate terminal at this repository's root, run:
 
    ```sh
    npm ci
@@ -53,6 +116,9 @@ the task controller, read-only investigation, limitations, and deployment notes.
 4. Open the **full local URL printed in the terminal**, including its `#` fragment.
    In a dev container, forward port **3210** to the same local port and use that URL
    in your host browser.
+   If the voice port is already in use, stop the earlier voice process or run
+   `VOICE_PORT=3220 npm run voice:dev` and forward port **3220** instead. Use the
+   newly printed URL after every server restart.
 5. Load/select an OpenCode session and click **Start voice**. This connects your
    microphone to ElevenLabs and uses your ElevenLabs account.
 6. Discuss a small task. After the agent reads back its proposal, say **“start
