@@ -3,6 +3,10 @@ Conversational AI client mobile app for conversations with your OpenCode server.
 
 ## Project status
 
+**Native iPhone app:** SwiftUI source, the direct OpenCode/ElevenLabs integration,
+and the Xcode project definition are in [`ios/`](ios/README.md). Follow that guide
+for the first Mac build and iPhone test. The native app does not need the browser bridge.
+
 The [product specification](docs/specification.md) records the agreed iOS/AirPods
 experience. [Feasibility gates](docs/feasibility.md) track the device behaviors still
 to prove. The implementation includes a Node.js 22 OpenCode integration library,

@@ -71,7 +71,9 @@ Locked-phone use through AirPods during a deliberately started voice session is 
 ## Networking and setup
 
 - Keep OpenCode private to the Tailscale network. The iPhone connects separately to ElevenLabs over the internet.
-- Initial settings accept the Tailscale host address, required OpenCode credentials, and ElevenLabs agent configuration. Exact credential fields depend on the verified authentication architecture.
+- Initial settings accept the Tailscale host address, required OpenCode credentials, and ElevenLabs API key and agent ID.
+- Users create their own ElevenLabs account and configure their own agent, then enter those credentials in the app. Onboarding provides the required prompt/tool configuration and validation instructions; it does not automatically provision an account or agent.
+- The intended iOS credential flow stores the user's ElevenLabs API key in Keychain and obtains conversation tokens from the device. The current browser prototype keeps that key in the Ubuntu bridge's `.env`; device-side authentication remains to validate.
 - Store credentials securely and provide a connection test.
 - A small Ubuntu companion service is acceptable only where needed for authentication, notifications, or coordination; it does not replace the OpenCode server.
 

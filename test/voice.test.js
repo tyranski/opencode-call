@@ -143,6 +143,20 @@ test('ElevenLabs token exchange keeps the long-lived key on the server and valid
   await assert.rejects(conversationToken({}), /Set ELEVENLABS/);
 });
 
+test('missing ElevenLabs Agents permission gives actionable guidance without exposing provider details', async () => {
+  await assert.rejects(conversationToken({
+    apiKey: 'private-test-key', agentID: 'agent_test',
+    fetcher: async () => Response.json({ detail: {
+      status: 'missing_permissions', message: 'private-test-key provider detail',
+    } }, { status: 401 }),
+  }), error => {
+    assert.match(error.message, /convai_write/);
+    assert.match(error.message, /HTTP 401/);
+    assert.doesNotMatch(error.message, /private-test-key|provider detail/);
+    return true;
+  });
+});
+
 test('bridge rejects unauthenticated/cross-origin calls and scopes tools to a live room', async t => {
   const { client, workflow, calls } = await fixture(t);
   const { server, key } = createVoiceServer({ client, workflow, key: 'bridge-test-key', getToken: async () => 'provider-token' });

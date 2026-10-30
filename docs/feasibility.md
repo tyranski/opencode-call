@@ -23,6 +23,12 @@ Can be developed in the Linux environment using the target server's actual API c
 
 ## Gate 2 — Apple tooling
 
+Native SwiftUI source and an XcodeGen definition are now in `ios/`. The native
+client talks directly to OpenCode/ElevenLabs and keeps credentials in Keychain.
+See `ios/README.md` for first-build instructions. The Linux environment has no
+Swift compiler or iOS SDK; native compilation, Swift tests, and device behavior
+remain unverified until the Mac build.
+
 - Obtain the old Mac model, macOS version, and supported Xcode versions.
 - Verify compatibility with the user's iPhone OS and selected ElevenLabs SDK release.
 - Attempt physical-device development signing using a free Apple Account. Free provisioning has limitations and generally requires reinstallation after seven days.

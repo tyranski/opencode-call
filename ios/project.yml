@@ -1,0 +1,54 @@
+name: OpenCodeCall
+options:
+  bundleIdPrefix: dev.opencall
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  ElevenLabs:
+    url: https://github.com/elevenlabs/elevenlabs-swift-sdk.git
+    exactVersion: 3.4.0
+  LiveKit:
+    url: https://github.com/livekit/client-sdk-swift.git
+    exactVersion: 2.10.0
+  CallCore:
+    path: CallCore
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+targets:
+  OpenCodeCall:
+    type: application
+    platform: iOS
+    sources:
+      - OpenCodeCall
+    dependencies:
+      - package: ElevenLabs
+      - package: CallCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.opencall.OpenCodeCall
+        PRODUCT_NAME: OpenCodeCall
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+    info:
+      path: OpenCodeCall/Info.plist
+      properties:
+        CFBundleDisplayName: OpenCode Call
+        NSMicrophoneUsageDescription: Talk to your ElevenLabs agent to discuss and authorize work in OpenCode.
+        NSLocalNetworkUsageDescription: Connect to your own OpenCode server on your local network.
+        UIBackgroundModes:
+          - audio
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+schemes:
+  OpenCodeCall:
+    build:
+      targets:
+        OpenCodeCall: all

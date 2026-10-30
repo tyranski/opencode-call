@@ -12,7 +12,17 @@ export async function conversationToken({ apiKey, agentID, fetcher = fetch }) {
   const url = new URL('https://api.elevenlabs.io/v1/convai/conversation/token');
   url.searchParams.set('agent_id', agentID);
   const response = await fetcher(url, { headers: { 'xi-api-key': apiKey }, signal: AbortSignal.timeout(10000) });
-  if (!response.ok) throw new Error(`ElevenLabs token request failed (HTTP ${response.status})`);
+  if (!response.ok) {
+    const failure = await response.json().catch(() => ({}));
+    // Map known codes to local guidance; never forward raw provider error bodies.
+    const guidance = {
+      missing_permissions: 'Enable ElevenLabs Agents/Conversational AI write permission (convai_write) for this API key.',
+      invalid_api_key: 'Check ELEVENLABS_API_KEY or create a replacement key, then restart the voice bridge.',
+    };
+    const code = failure?.detail?.status;
+    const hint = Object.hasOwn(guidance, code) ? ` ${guidance[code]}` : '';
+    throw new Error(`ElevenLabs token request failed (HTTP ${response.status}).${hint}`);
+  }
   const data = await response.json();
   if (typeof data.token !== 'string' || !data.token) throw new Error('ElevenLabs returned no conversation token');
   return data.token;
@@ -31,7 +41,12 @@ async function jsonBody(req) {
 }
 
 /** Loopback-only development harness. Long-lived provider keys stay on this server. */
-export function createVoiceServer({ client, workflow, apiKey, agentID, key = randomBytes(32).toString('hex'), getToken = conversationToken }) {
+export function createVoiceServer({ client, workflow, apiKey, agentID, publicOrigin, key = randomBytes(32).toString('hex'), getToken = conversationToken }) {
+  const external = publicOrigin ? new URL(publicOrigin) : undefined;
+  if (external && (!['http:', 'https:'].includes(external.protocol) || external.username || external.password ||
+      external.pathname !== '/' || external.search || external.hash)) {
+    throw new Error('VOICE_PUBLIC_ORIGIN must be an HTTP(S) origin without a path, credentials, query, or fragment');
+  }
   const rooms = new Map();
   const server = createServer(async (req, res) => {
     const send = (status, value) => {
@@ -39,9 +54,12 @@ export function createVoiceServer({ client, workflow, apiKey, agentID, key = ran
       res.end(JSON.stringify(value));
     };
     try {
-      const port = server.address().port;
-      if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.host)) return send(403, { error: 'Invalid host' });
-      if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) return send(403, { error: 'Invalid origin' });
+      const host = req.headers.host ?? '';
+      const local = /^(localhost|127\.0\.0\.1|\[::1\])(?::\d{1,5})?$/.test(host);
+      const configured = external?.host === host;
+      if (!local && !configured) return send(403, { error: 'Invalid host. Use the printed localhost URL, or set VOICE_PUBLIC_ORIGIN to your forwarded browser origin and restart.' });
+      const expectedOrigin = configured ? external.origin : `http://${host}`;
+      if (req.headers.origin && req.headers.origin !== expectedOrigin) return send(403, { error: 'Invalid origin' });
       const path = new URL(req.url, `http://${req.headers.host}`).pathname;
       if (path.startsWith('/api/')) {
         const provided = Buffer.from(req.headers.authorization ?? '');
@@ -94,10 +112,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     username: process.env.OPENCODE_SERVER_USERNAME, password: process.env.OPENCODE_SERVER_PASSWORD,
   });
   const workflow = new Workflow(client, new Journal('.opencode-call/tasks.json'));
-  const { server, key } = createVoiceServer({ client, workflow, apiKey: process.env.ELEVENLABS_API_KEY, agentID: process.env.ELEVENLABS_AGENT_ID });
+  const { server, key } = createVoiceServer({ client, workflow, apiKey: process.env.ELEVENLABS_API_KEY, agentID: process.env.ELEVENLABS_AGENT_ID, publicOrigin: process.env.VOICE_PUBLIC_ORIGIN });
   server.listen(Number(process.env.VOICE_PORT ?? 3210), '127.0.0.1', () => {
-    console.log(`OpenCode Call voice test: http://127.0.0.1:${server.address().port}/#${key}`);
+    const origin = process.env.VOICE_PUBLIC_ORIGIN ? new URL(process.env.VOICE_PUBLIC_ORIGIN).origin : `http://127.0.0.1:${server.address().port}`;
+    console.log(`OpenCode Call voice test: ${origin}/#${key}`);
     console.log('Use one tab. Starting voice uses your configured ElevenLabs account. Ctrl+C stops the bridge.');
   });
-  server.on('error', error => { console.error(error.message); process.exitCode = 1; });
+  server.on('error', error => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Voice port ${process.env.VOICE_PORT ?? 3210} is already in use. Stop the previous voice:dev process with Ctrl+C, or choose another port, for example: VOICE_PORT=3220 npm run voice:dev`);
+      console.error('In a dev container, forward the new port too. If VOICE_PUBLIC_ORIGIN is set, update it or its proxy mapping to match.');
+    } else {
+      console.error(error.message);
+    }
+    process.exitCode = 1;
+  });
 }

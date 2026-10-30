@@ -13,6 +13,10 @@
 !.env.example
 .opencode-call/
 .voice-build/
+ios/*.xcodeproj/
+ios/OpenCodeCall/Info.plist
+ios/**/.build/
+ios/**/.swiftpm/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

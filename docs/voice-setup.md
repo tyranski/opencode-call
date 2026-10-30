@@ -48,7 +48,8 @@ Copy `.env.example` to `.env` and fill in:
 - `OPENCODE_URL`: OpenCode HTTP endpoint, or private Tailscale HTTPS endpoint.
 - `OPENCODE_DIRECTORY`: absolute project path on the OpenCode host.
 - `OPENCODE_SERVER_PASSWORD` and optionally username if required.
-- `ELEVENLABS_API_KEY`: server-side ElevenLabs key permitted to obtain conversation tokens.
+- `ELEVENLABS_API_KEY`: server-side ElevenLabs key with Agents/Conversational AI
+  **write** permission (`convai_write`), required to obtain conversation tokens.
 - `ELEVENLABS_AGENT_ID`: dedicated agent ID from the dashboard.
 
 Run:
@@ -59,14 +60,21 @@ npm run voice:dev
 ```
 
 Open the printed `http://127.0.0.1:3210/#...` URL. The fragment is a randomly
-generated local bridge credential, removed from the address bar after page load.
-Reopen the printed URL after refreshing. Do not share it. The bridge binds only
+generated local bridge credential, removed from the address bar after page load
+and retained in this browser tab's session storage so refresh works. After
+restarting the bridge, open its newly printed URL to replace the old key. Do not
+share it. The bridge binds only
 to loopback, requires that credential on API requests, and rejects cross-origin
 requests. It is a local single-user development harness, not a deployed mobile API.
 
-For a dev container, forward port 3210 to host port 3210 and use the host's browser
-for microphone access. Remote/non-localhost browser hosting needs HTTPS and a
-deployment authentication design, and is outside this harness. Use one browser tab.
+For a dev container, forward port 3210 and use the host's browser for microphone
+access. Remapped localhost ports are supported: use the browser's forwarded port
+and preserve the printed `#` fragment. For an HTTPS forwarding hostname, set
+`VOICE_PUBLIC_ORIGIN=https://your-exact-forwarded-host` in `.env`, then restart
+`npm run voice:dev`. Supply only the origin, without a path or fragment. The printed
+URL will use it, and only that additional hostname/origin is accepted. Keep the
+forwarded port private. This remains a single-user test harness, not a production
+deployment authentication design. Use one browser tab.
 
 The bridge exchanges the API key for a short-lived WebRTC conversation token. The
 browser receives that token, never the long-lived ElevenLabs or OpenCode keys.
@@ -90,6 +98,24 @@ the development container's Node 22.16 runtime.
 
 Typed replies use the same authorization checks. Transcripts and tool errors are
 displayed as plain text. Ending voice does not stop the PC build.
+
+### Microphone access denied
+
+Sessions load automatically when the page opens. If Start voice fails with
+microphone permission denied, use the browser's site settings (beside the address
+bar) to set Microphone to **Allow** for this exact origin, then try again. Open a
+regular browser tab rather than an embedded VS Code preview. Microphone access
+requires localhost or HTTPS. Also check the selected input device in Ubuntu's
+Sound settings. The app now labels the startup stage so microphone failures can
+be distinguished from ElevenLabs authentication or voice-connection errors.
+
+### ElevenLabs HTTP 401: missing permissions
+
+If the error identifies `convai_write`, edit the API key's permissions in ElevenLabs
+and enable write access for Agents/Conversational AI. If you create a replacement
+key, update `ELEVENLABS_API_KEY` in `.env`, restart `npm run voice:dev`, and open
+the newly printed URL. Read-only Agents access is insufficient for the WebRTC
+conversation-token endpoint.
 
 ## Authorization boundary
 
